@@ -14,12 +14,12 @@ Feature: Recherche de transactions dans ParaBank
     Then la liste des transactions correspondantes doit s'afficher
 
   Scenario: Recherche de transactions par date
-    When il recherche des transactions avec la date "04-03-2026"
+    When il recherche des transactions avec la date "03-09-2026"
     Then la liste des transactions correspondantes doit s'afficher
 
   Scenario: Recherche de transactions par plage de dates
-    When il recherche des transactions entre "01-01-2024" et "31-12-2027"
-    Then la liste des transactions correspondantes doit s'afficher
+    When il recherche des transactions entre "01-01-2026" et "31-12-2024"
+    Then Un message d'erreur doit s'afficher indiquant que la date de fin doit être supérieure à la date de début
 
   Scenario: Recherche de transactions par montant
     When il recherche des transactions avec le montant "100"

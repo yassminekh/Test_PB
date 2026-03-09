@@ -1,5 +1,3 @@
-# Test_PB
-
 # 🧪 Tests UI automatisés — ParaBank
 
 Tests UI automatisés avec **Selenium** et **Behave (BDD)** sur le site de démo
@@ -10,21 +8,14 @@ Tests UI automatisés avec **Selenium** et **Behave (BDD)** sur le site de démo
 ## 📋 Features testées
 
 | Feature | Scénarios | Statut |
-|---------|-----------|--------|
-| 🔐Login | 3 | ✅ |
-| 💸Transfer Funds | 4 | ✅ |
-| **Total** | **7** | **✅** |
-
-### 🔐 Login
-- Connexion avec identifiants valides
-- Connexion avec username inexistant
-- Connexion avec mot de passe incorrect
-
-### 💸 Transfer Funds
-- Transfert valide entre deux comptes
-- Transfert avec montant négatif
-- Transfert avec montant vide
-- Transfert avec caractère non numérique
+|---|---|---|
+| 🔐 Login | 3 | ✅ |
+| 💸 Transfer Funds | 5 | ✅ |
+| 🔍 Find Transactions | 4 | ✅ |
+| 💰 Request Loan | 12 | ✅ |
+| 🏦 Création Compte | 4 | ✅ |
+| 💳 Bill Pay | - | ✅ |
+| **Total** | **28+** | **✅** |
 
 ---
 
@@ -33,18 +24,28 @@ Tests UI automatisés avec **Selenium** et **Behave (BDD)** sur le site de démo
 Test_PB/
 ├── .github/
 │   └── workflows/
-│       └── tests.yml          ← CI/CD GitHub Actions
+│       └── tests.yml              ← CI/CD GitHub Actions
 ├── features/
-│   ├── login.feature          ← Scénarios login
-│   ├── transfer.feature       ← Scénarios transfert
+│   ├── login.feature              ← Scénarios login
+│   ├── transfer.feature           ← Scénarios transfert
+│   ├── find_transactions.feature  ← Scénarios recherche transactions
+│   ├── request_loan.feature       ← Scénarios demande de prêt
+│   ├── creation_compte.feature    ← Scénarios création compte
+│   ├── bill_pay.feature           ← Scénarios paiement factures
 │   └── steps/
-│       ├── login_steps.py     ← Steps Selenium login
-│       └── transfer_steps.py  ← Steps Selenium transfert
-├── environment.py             ← Configuration driver Edge/Chrome
-├── generer_rapport.py         ← Génération rapport HTML
-├── rapport.json               ← Rapport JSON (généré)
-├── rapport.html               ← Rapport HTML (généré)
-├── screenshots/               ← Screenshots en cas d'échec
+│       ├── login_steps.py
+│       ├── transfer_steps.py
+│       ├── find_transactions_steps.py
+│       ├── request_loan_steps.py
+│       ├── creation_compte_steps.py
+│       └── bill_pay_steps.py
+├── screenshots/                   ← Screenshots en cas d'échec
+├── environment.py                 ← Configuration driver Edge/Chrome
+├── fusionner.py                   ← Fusion des rapports JSON
+├── generer_rapport.py             ← Génération rapport HTML
+├── rapport.json                   ← Rapport JSON fusionné (généré)
+├── rapport.html                   ← Rapport HTML final (généré)
+├── transaction_id.txt             ← ID transaction CAS 14 (généré)
 ├── .gitattributes
 └── README.md
 ```
@@ -54,7 +55,7 @@ Test_PB/
 ## 🛠️ Technologies
 
 | Outil | Version | Rôle |
-|-------|---------|------|
+|---|---|---|
 | Python | 3.14 | Langage |
 | Behave | 1.3.3 | Framework BDD |
 | Selenium | 4.40.0 | Automatisation navigateur |
@@ -76,29 +77,60 @@ pip install behave selenium webdriver-manager
 
 ---
 
-## ▶️ Lancer les tests
+## 🌐 URLs
+
+| Environnement | URL |
+|---|---|
+| Local | http://localhost:8080/parabank |
+| CI/CD | https://parabank.parasoft.com/parabank |
+
+---
+
+## 👤 Compte de test
+
+| Champ | Valeur |
+|---|---|
+| Username | john |
+| Password | demo |
+
+---
+
+## ▶️ Lancer les tests en local
 ```bash
 # Tous les tests
 py -m behave --no-capture -v
 
-# Login uniquement
+# Feature spécifique
 py -m behave features/login.feature --no-capture -v
-
-# Transfert uniquement
 py -m behave features/transfer.feature --no-capture -v
+py -m behave features/find_transactions.feature --no-capture -v
+py -m behave features/request_loan.feature --no-capture -v
+py -m behave features/creation_compte.feature --no-capture -v
+py -m behave features/bill_pay.feature --no-capture -v
 ```
 
 ---
 
 ## 📊 Générer le rapport HTML
 ```bash
-# 1. Génère le rapport JSON
-py -m behave --format json --outfile rapport.json
+# 1. CAS 14 en premier (génère transaction_id.txt)
+py -m behave features/transfer.feature --no-capture --name "CAS 14 - Vérifier les détails d'une transaction après transfert"
 
-# 2. Convertit en HTML
+# 2. Lance tous les tests
+py -m behave features/login.feature --format json --outfile rapport_login.json --no-capture
+py -m behave features/transfer.feature --format json --outfile rapport_transfer.json --no-capture
+py -m behave features/find_transactions.feature --format json --outfile rapport_find.json --no-capture
+py -m behave features/request_loan.feature --format json --outfile rapport_loan.json --no-capture
+py -m behave features/creation_compte.feature --format json --outfile rapport_creation_compte.json --no-capture
+py -m behave features/bill_pay.feature --format json --outfile rapport_bill_pay.json --no-capture
+
+# 3. Fusionne les JSON
+py fusionner.py
+
+# 4. Génère le HTML
 py generer_rapport.py
 
-# 3. Ouvre le rapport
+# 5. Ouvre le rapport
 start rapport.html
 ```
 
@@ -110,16 +142,27 @@ Le workflow se déclenche automatiquement à chaque **push** ou **pull request**
 ```
 Push sur GitHub
       ↓
-🔐 Job 1 : Tests Login       (3 scénarios)
-      ↓ ✅
-💸 Job 2 : Tests Transfert   (4 scénarios)
-      ↓ ✅
-📊 Job 3 : Rapport Final     (rapport.html)
+┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Login   │  │ Transfer │  │   Loan   │  │ Bill Pay │  ← parallèle
+└──────────┘  └────┬─────┘  └──────────┘  └──────────┘
+                   ↓ transaction_id.txt
+        ┌──────────────┐  ┌──────────────────┐
+        │Find Trans.   │  │ Création Compte   │  ← parallèle
+        └──────────────┘  └──────────────────┘
+                    ↓ if: always()
+             ┌─────────────┐
+             │Rapport Final│  ← toujours généré
+             └─────────────┘
 ```
 
 ### Télécharger le rapport depuis GitHub Actions
 ```
 GitHub → Actions → dernier run → Artifacts → rapport-html-final
+```
+
+### Voir le rapport en ligne
+```
+https://yassminekh.github.io/Test_PB/
 ```
 
 ---
@@ -137,20 +180,26 @@ GitHub → Actions → dernier run → Artifacts → rapport-html-final
 
 Les screenshots sont **automatiquement sauvegardés** dans `screenshots/`
 uniquement en cas d'échec d'un test.
-```
-screenshots/
-├── login_valide_FAILED.png
-├── Connexion_avec_username_inexistant_FAILED.png
-└── ...
-```
 
 ---
 
-## 👤 Compte de test ParaBank
+## 🐛 Bugs connus
 
-| Champ | Valeur |
-|---|---|
-| Username | john |
-| Password | demo |
+| Feature | Scénario | Statut |
+|---|---|---|
+| Transfer Funds | Montant négatif accepté | ❌ BUG |
 
-> ⚠️ Compte de démo public — peut être réinitialisé par ParaBank à tout moment.
+> ParaBank accepte les montants négatifs lors d'un transfert.
+> Un message d'erreur devrait s'afficher — tag `@known_bug`.
+
+---
+
+## 📦 Dépendances
+```
+behave==1.3.3
+selenium==4.40.0
+webdriver-manager
+```
+```bash
+pip install behave selenium webdriver-manager
+```
